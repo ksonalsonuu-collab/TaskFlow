@@ -1,0 +1,570 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TaskFlow Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #17182e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            background-color: #252746;
+            border: 2px solid #ffd84d;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ffd84d;
+        }
+
+        .container {
+            background-color: #252746;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ffd84d;
+            border-radius: 12px;
+        }
+
+        input, select {
+            padding: 12px;
+            margin: 6px;
+            border-radius: 6px;
+            border: 1px solid #ffd84d;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #ffd84d;
+            color: #17182e;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .logout {
+            background-color: #ff7777;
+        }
+
+        .task {
+            background-color: #343756;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffd84d;
+        }
+
+        .comment {
+            background-color: #252746;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        .comment-input {
+            width: 90%;
+        }
+
+        .count {
+            color: #ffd84d;
+            font-weight: bold;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>TaskFlow</h1>
+    <p>Collaborative Project Management System</p>
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+    <h2>Create Project</h2>
+
+    <input type="text" id="projectName"
+           placeholder="Enter project name">
+
+    <button onclick="createProject()">Create Project</button>
+
+    <h3>Select Project</h3>
+
+    <select id="projectSelect" onchange="showTasks()">
+    </select>
+
+</div>
+
+<div class="container">
+
+    <h2>Add New Task</h2>
+
+    <input type="text" id="taskTitle"
+           placeholder="Enter task title">
+
+    <input type="text" id="assignee"
+           placeholder="Assigned person">           <input type="date"
+
+ id="dueDate" required>           <label for="taskPriority">Task Priority:</label>
+
+<select id="taskPriority">
+    <option value="Medium">Medium</option>
+    <option value="High">High</option>
+    <option value="Low">Low</option>
+</select>               <select id="taskStatus">
+        <option>Pending</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+    </select>
+
+    <button onclick="addTask()">Add Task</button>
+
+</div>
+
+<div class="container">
+
+    <h2>Dashboard Overview</h2>
+
+    <p>Total Tasks: <span class="count" id="total">0</span></p>
+    <p>Pending: <span class="count" id="pending">0</span></p>
+    <p>In Progress: <span class="count" id="progress">0</span></p>
+    <p>Completed: <span class="count" id="completed">0</span></p>
+
+</div>
+
+<div class="container">
+
+    <h2>Project Tasks</h2>
+
+    <input
+        type="text"
+        id="taskSearch"
+        placeholder="Search by task title or assigned person"
+        oninput="showTasks()"
+    >
+
+    <label for="taskFilter">Filter Tasks:</label>
+
+<select id="taskFilter" onchange="showTasks()">
+    <option value="All">All Tasks</option>
+    <option value="High">High Priority</option>
+    <option value="Medium">Medium Priority</option>
+    <option value="Low">Low Priority</option>
+    <option value="Completed">Completed</option>
+    <option value="Pending">Pending</option>
+</select>        <div id="taskList"></div>
+
+</div><script>
+
+    let projects = JSON.parse(
+        localStorage.getItem("taskflowProjects") || "[]"
+    );
+
+    let tasks = JSON.parse(
+        localStorage.getItem("taskflowTasks") || "[]"
+    );
+
+    let comments = JSON.parse(
+        localStorage.getItem("taskflowComments") || "{}"
+    );
+
+    function saveData() {
+
+        localStorage.setItem(
+            "taskflowProjects",
+            JSON.stringify(projects)
+        );
+
+        localStorage.setItem(
+            "taskflowTasks",
+            JSON.stringify(tasks)
+        );
+
+        localStorage.setItem(
+            "taskflowComments",
+            JSON.stringify(comments)
+        );
+
+    }
+
+    function createProject() {
+
+        let name = document.getElementById("projectName").value.trim();
+
+        if (name === "") {
+            alert("Please enter a project name");
+            return;
+        }
+
+        let project = {
+            id: Date.now(),
+            name: name
+        };
+
+        projects.push(project);
+
+        saveData();
+
+        document.getElementById("projectName").value = "";
+
+        updateProjects();
+
+    }
+
+    function updateProjects() {
+
+        let select = document.getElementById("projectSelect");
+
+        let previous = select.value;
+
+        select.innerHTML = "";
+
+        projects.forEach(function(project) {
+
+            let option = document.createElement("option");
+
+            option.value = project.id;
+            option.textContent = project.name;
+
+            select.appendChild(option);
+
+        });
+
+        if (projects.some(p => String(p.id) === previous)) {
+            select.value = previous;
+        }
+
+        showTasks();
+
+    }
+
+    function addTask() {
+
+        let projectId = Number(
+            document.getElementById("projectSelect").value
+        );
+
+        let title = document.getElementById("taskTitle").value.trim();
+
+        let dueDate = document.getElementById("dueDate").value;       let assignee = document.getElementById("assignee").value.trim();
+
+        let status = document.getElementById("taskStatus").value;
+
+        let priority = document.getElementById("taskPriority").value;           if (!projectId) {
+            alert("Please create a project first");
+            return;
+        }
+
+        if (title === "") {
+            alert("Please enter a task title");
+            return;
+        }
+
+        let task = {
+            id: Date.now(),
+            projectId: projectId,
+            title: title,
+            assignee: assignee,
+            dueDate: dueDate,             priority: priority,            status: status
+        };
+
+        tasks.push(task);
+
+        saveData();
+
+        document.getElementById("taskTitle").value = "";
+        document.getElementById("assignee").value = "";
+
+        showTasks();
+
+    }
+
+    function updateStatus(id, status) {
+
+        tasks = tasks.map(function(task) {
+
+            if (task.id === id) {
+                task.status = status;
+            }
+
+            return task;
+
+        });
+
+        saveData();
+        showTasks();
+
+    }
+
+    function deleteTask(id) {
+
+        tasks = tasks.filter(task => task.id !== id);
+
+        delete comments[id];
+
+        saveData();
+        showTasks();
+
+    }
+
+             function editTask(id) {
+
+    let task = tasks.find(task => task.id === id);
+
+    if (!task) {
+        alert("Task not found");
+        return;
+    }
+
+    let newTitle = prompt("Enter new task title:", task.title);
+
+    if (newTitle === null) {
+        return;
+    }
+
+    newTitle = newTitle.trim();
+
+    if (newTitle === "") {
+        alert("Task title cannot be empty");
+        return;
+    }
+
+    let newAssignee = prompt(
+        "Enter assigned person:",
+        task.assignee || ""
+    );
+
+    if (newAssignee === null) {
+        return;
+    }
+
+    let newDueDate = prompt(
+        "Enter due date (YYYY-MM-DD):",
+        task.dueDate || ""
+    );
+
+    if (newDueDate === null) {
+        return;
+    }
+
+    task.title = newTitle;
+    task.assignee = newAssignee.trim();
+    task.dueDate = newDueDate;
+
+    saveData();
+    showTasks();
+
+    alert("Task updated successfully!");
+
+}       function addComment(taskId) {
+
+        let input = document.getElementById("commentInput" + taskId);
+
+        let commentText = input.value.trim();
+
+        if (commentText === "") {
+            alert("Please enter a comment");
+            return;
+        }
+
+        if (!comments[taskId]) {
+            comments[taskId] = [];
+        }
+
+        comments[taskId].push(commentText);
+
+        saveData();
+        showTasks();
+
+    }
+
+    function showTasks() {
+
+        let projectId = Number(
+            document.getElementById("projectSelect").value
+        );
+
+        let searchText = document.getElementById("taskSearch").value.toLowerCase();            let filterValue = document.getElementById("taskFilter").value;              
+
+let projectTasks = tasks.filter(function(task) {
+    let matchesProject = task.projectId === projectId;
+
+    let matchesSearch =
+        task.title.toLowerCase().includes(searchText) ||
+        (task.assignee || "").toLowerCase().includes(searchText);
+
+    let matchesFilter =
+        filterValue === "All" ||
+        (filterValue === "High" && task.priority === "High") ||
+        (filterValue === "Medium" && (task.priority || "Medium") === "Medium") ||
+        (filterValue === "Low" && task.priority === "Low") ||
+        (filterValue === "Completed" && task.status === "Completed") ||
+        (filterValue === "Pending" && task.status !== "Completed");
+
+    return matchesProject && matchesSearch && matchesFilter;
+});    
+
+        let list = document.getElementById("taskList");
+
+        list.innerHTML = "";
+
+        projectTasks.forEach(function(task) {
+
+            let div = document.createElement("div");
+            div.className = "task";
+
+            let title = document.createElement("strong");
+            title.textContent = task.title;
+
+            let person = document.createElement("p");
+            person.textContent =
+                "Assigned to: " + (task.assignee || "Not assigned");
+
+            let status = document.createElement("select");
+
+            ["Pending", "In Progress", "Completed"].forEach(function(value) {
+
+                let option = document.createElement("option");
+
+                option.value = value;
+                option.textContent = value;
+
+                if (task.status === value) {
+                    option.selected = true;
+                }
+
+                status.appendChild(option);
+
+            });
+
+            status.onchange = function() {
+                updateStatus(task.id, status.value);
+            };
+
+            let remove = document.createElement("button");
+            remove.textContent = "Delete Task";
+
+            remove.onclick = function() {
+                deleteTask(task.id);
+            };
+
+     let edit = document.createElement("button");
+edit.textContent = "Edit Task";
+
+edit.onclick = function() {
+    editTask(task.id);
+};           let commentHeading = document.createElement("h4");
+            commentHeading.textContent = "Comments";
+
+            let commentList = document.createElement("div");
+
+            let taskComments = comments[task.id] || [];
+
+            if (taskComments.length === 0) {
+                let empty = document.createElement("p");
+                empty.textContent = "No comments yet.";
+                commentList.appendChild(empty);
+            }
+
+            taskComments.forEach(function(commentText) {
+
+                let commentBox = document.createElement("div");
+                commentBox.className = "comment";
+                commentBox.textContent = commentText;
+
+                commentList.appendChild(commentBox);
+
+            });
+
+            let commentInput = document.createElement("input");
+
+            commentInput.type = "text";
+            commentInput.id = "commentInput" + task.id;
+            commentInput.className = "comment-input";
+            commentInput.placeholder = "Write a comment";
+
+            let commentButton = document.createElement("button");
+            commentButton.textContent = "Post Comment";
+
+            commentButton.onclick = function() {
+                addComment(task.id);
+            };
+
+            div.appendChild(title);
+            div.appendChild(person);
+            let priorityText = document.createElement("p");
+priorityText.textContent = "Priority: " + (task.priority || "Medium");
+div.appendChild(priorityText);                 let due = document.createElement("p");
+due.textContent = "Due Date: " + (task.dueDate || "Not set");
+div.appendChild(due);             div.appendChild(document.createElement("br"));
+            div.appendChild(status);          let statusSelect = document.createElement("select");
+
+let pendingOption = document.createElement("option");
+pendingOption.value = "Pending";
+pendingOption.textContent = "Pending";
+
+let inProgressOption = document.createElement("option");
+inProgressOption.value = "In Progress";
+inProgressOption.textContent = "In Progress";
+
+let completedOption = document.createElement("option");
+completedOption.value = "Completed";
+completedOption.textContent = "Completed";
+
+statusSelect.appendChild(pendingOption);
+statusSelect.appendChild(inProgressOption);
+statusSelect.appendChild(completedOption);
+
+statusSelect.value = task.status;
+
+div.appendChild(statusSelect);            
+
+div.appendChild(statusSelect);               statusSelect.addEventListener("change", function() {
+    task.status = statusSelect.value;
+    localStorage.setItem("taskflowTasks", JSON.stringify(tasks));
+    showTasks();
+});              div.appendChild(remove);
+           div.appendChild(edit);             div.appendChild(commentHeading);
+            div.appendChild(commentList);
+            div.appendChild(commentInput);
+            div.appendChild(commentButton);
+
+            list.appendChild(div);
+
+        });
+
+        document.getElementById("total").textContent =
+            projectTasks.length;
+
+        document.getElementById("pending").textContent =
+            projectTasks.filter(t => t.status === "Pending").length;
+
+        document.getElementById("progress").textContent =
+            projectTasks.filter(t => t.status === "In Progress").length;
+
+        document.getElementById("completed").textContent =
+            projectTasks.filter(t => t.status === "Completed").length;
+
+    }
+
+    function logout() {
+        window.location.href = "login.html";
+    }
+
+    updateProjects();
+
+</script>
+
+</body>
+</html>

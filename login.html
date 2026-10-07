@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TaskFlow - Login</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #17182e;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .container {
+            background-color: #252746;
+            padding: 30px;
+            width: 320px;
+            margin: 30px auto;
+            border: 2px solid #ffd84d;
+            border-radius: 12px;
+        }
+
+        h1 {
+            color: #ffd84d;
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ffd84d;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #ffd84d;
+            color: #17182e;
+            padding: 12px;
+            width: 95%;
+            border: none;
+            border-radius: 6px;
+            margin-top: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        a {
+            color: #ffd84d;
+            text-decoration: none;
+        }
+
+        #message {
+            color: lightgreen;
+        }
+
+        .error {
+            color: #ff7777 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>TaskFlow</h1>
+
+    <p>Collaborative Project Management System</p>
+
+    <div class="container">
+
+        <h2>Login</h2>
+
+        <form id="loginForm">
+
+            <input
+                type="email"
+                id="email"
+                placeholder="Enter Email"
+                required
+            >
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Enter Password"
+                required
+            >
+
+            <button type="submit">Login</button>
+
+        </form>
+
+        <p id="message"></p>
+
+        <p>
+            Don't have an account?
+            <a href="register.html">Register Here</a>
+        </p>
+
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+
+            event.preventDefault();
+
+            let email = document.getElementById("email").value.trim().toLowerCase();
+
+            let password = document.getElementById("password").value;
+
+            let savedUser = localStorage.getItem("taskflowUser");
+
+            let message = document.getElementById("message");
+
+            if (savedUser === null) {
+
+                message.textContent = "Please register your account first.";
+                message.className = "error";
+
+                return;
+            }
+
+            let user = JSON.parse(savedUser);
+
+            if (email === user.email && password === user.password) {
+
+                window.location.href = "index.html";
+
+            } else {
+
+                message.textContent = "Incorrect email or password!";
+                message.className = "error";
+
+            }
+
+        });
+    </script>
+
+</body>
+</html>
